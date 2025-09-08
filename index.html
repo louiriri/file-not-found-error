@@ -1,334 +1,129 @@
+
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
   <meta name='referrer' content='no-referrer'>
-  <meta name='viewport' content='width=device-width,initial-scale=1.0' />
-  <script src='https://cdnjs.cloudflare.com/ajax/libs/shaka-player/3.0.7/shaka-player.ui.min.js'></script>
-  <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/shaka-player/3.0.7/controls.min.css' />
-  <style>
-    body {
-      background-color: black;
-      margin: 0;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-    }
-    
-    #videoContainer {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    
-    #video {
-      width: 100%;
-      height: 100%;
-    }
-    
-    #liveIndicator {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background-color: rgba(255, 0, 0, 0.7);
-      color: white;
-      padding: 5px 10px;
-      border-radius: 4px;
-      font-size: 14px;
-      font-weight: bold;
-      z-index: 10;
-      display: flex;
-      align-items: center;
-    }
-    
-    .liveDot {
-      width: 8px;
-      height: 8px;
-      background-color: white;
-      border-radius: 50%;
-      margin-right: 5px;
-      animation: pulse 1.5s infinite;
-    }
-    
-    #qualityMenu {
-      position: absolute;
-      bottom: 80px;
-      right: 20px;
-      background-color: rgba(0, 0, 0, 0.7);
-      color: white;
-      padding: 10px;
-      border-radius: 4px;
-      z-index: 10;
-      display: none;
-    }
-    
-    #qualityMenu button {
-      display: block;
-      width: 100%;
-      background: none;
-      border: none;
-      color: white;
-      padding: 8px 12px;
-      text-align: left;
-      cursor: pointer;
-    }
-    
-    #qualityMenu button:hover {
-      background-color: rgba(255, 255, 255, 0.2);
-    }
-    
-    #qualityBtn {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      background-color: rgba(0, 0, 0, 0.7);
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 4px;
-      z-index: 10;
-      cursor: pointer;
-    }
-    
-    #loadingMessage {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: white;
-      text-align: center;
-      z-index: 5;
-    }
-    
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.4; }
-      100% { opacity: 1; }
-    }
-  </style>
-</head>
-<body>
-  <div id="videoContainer" data-shaka-player-container>
-    <video autoplay data-shaka-player id='video'></video>
-    <div id="liveIndicator">
-      <div class="liveDot"></div>
-      <span>LIVE</span>
-    </div>
-    <div id="qualityMenu">
-      <button data-quality="144">Low (144p)</button>
-      <button data-quality="240">Medium (240p)</button>
-      <button data-quality="480">High (480p)</button>
-      <button data-quality="720">HD (720p)</button>
-      <button data-quality="1080">Full HD (1080p)</button>
-    </div>
-    <button id="qualityBtn">Quality</button>
-    <div id="loadingMessage">Loading stream...</div>
-  </div>
+    <meta name='viewport' content='width=device-width,initial-scale=1.0' />
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/shaka-player/3.0.7/shaka-player.ui.min.js'></script>
+    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/shaka-player/3.0.7/controls.min.css' />
+        <style>
 
-  <script>
-    var reloadtime = 10000; // 10 seconds
-    
-    // Function to handle autoplay with user interaction
-    function setupAutoplay() {
-      const video = document.getElementById('video');
-      
-      // Try to play programmatically
-      const playPromise = video.play();
-      
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          // Auto-play was prevented, show a play button
-          console.log('Autoplay prevented, waiting for user interaction');
-          const playOverlay = document.createElement('div');
-          playOverlay.style.position = 'absolute';
-          playOverlay.style.top = '0';
-          playOverlay.style.left = '0';
-          playOverlay.style.width = '100%';
-          playOverlay.style.height = '100%';
-          playOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-          playOverlay.style.display = 'flex';
-          playOverlay.style.justifyContent = 'center';
-          playOverlay.style.alignItems = 'center';
-          playOverlay.style.zIndex = '20';
-          playOverlay.style.cursor = 'pointer';
-          
-          const playButton = document.createElement('button');
-          playButton.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-          playButton.style.border = 'none';
-          playButton.style.borderRadius = '50%';
-          playButton.style.width = '60px';
-          playButton.style.height = '60px';
-          playButton.style.color = 'white';
-          playButton.style.fontSize = '24px';
-          playButton.innerHTML = '▶';
-          
-          playOverlay.appendChild(playButton);
-          document.getElementById('videoContainer').appendChild(playOverlay);
-          
-          playOverlay.addEventListener('click', function() {
-            video.play().catch(e => console.log('Play after click failed:', e));
-            document.getElementById('videoContainer').removeChild(playOverlay);
-          });
-        });
+      .shaka-spinner-container, .shaka-current-time, .shaka-progress-container {
+        display: none !important;
       }
-    }
-    
-    async function init() {
-      const video = document.getElementById('video');
-      const ui = video.ui;
-      const controls = ui.getControls();
-      const player = controls.getPlayer();
-      
-      // Show loading message
-      document.getElementById('loadingMessage').style.display = 'block';
-      
-      player.configure({
-        drm: {
-          servers: {
-            'com.widevine.alpha': 'https://azy4sj9b.anycast.nagra.com/AZY4SJ9B/wvls/contentlicenseservice/v1/licenses'
-          }
-        },
-        abr: {
-          enabled: true,
-          defaultBandwidthEstimate: 100000,
-          restrictions: {
-            maxHeight: 240, // Start with low quality
-            minHeight: 144
-          }
-        },
-        streaming: {
-          bufferingGoal: 30,
-          rebufferingGoal: 2,
-          bufferBehind: 30,
-          lowLatencyMode: true,
-          accurateSeek: true,
-          smallGapLimit: 0.5,
-          jumpLargeGaps: true
-        }
-      });
-      
-      window.player = player;
-      window.ui = ui;
-      
-      player.addEventListener('error', onPlayerErrorEvent);
-      controls.addEventListener('error', onUIErrorEvent);
-      
-      player.getNetworkingEngine().registerRequestFilter(function(type, request) {
-        if (type == shaka.net.NetworkingEngine.RequestType.LICENSE) {
-          request.headers['User-Agent'] = 'ReactNativeVideo/3.0 (Linux;Android 11) ExoPlayerLib/2.10.4';
-          request.headers['referer'] = 'app.azamtvmax.com';
-          request.headers['origin'] = 'app.azamtvmax.com';
-          request.headers['nv-tenant-id'] = 'AZY4SJ9B';
-          request.headers['nv-authorizations'] = "eyJraWQiOiI3NzUwOTAiLCJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ2ZXIiOiIxLjAiLCJjb250ZW50UmlnaHRzIjpbeyJjb250ZW50SWQiOiJDSC0zOTc0YzJjZC05ZWM0LTRkMDMtODJiMS05Yzk5Mzk3M2U0ODciLCJzdGFydCI6IjIwMjUtMDMtMzFUMDA6MDA6MDBaIiwiZW5kIjoiMjAzMC0wMi0xOVQwMDowMDowMFoiLCJ1c2FnZVJ1bGVzUHJvZmlsZUlkIjoiU0QifV0sInRlbmFudElkIjoiQVpZNFNKOUIiLCJ0eXAiOiJDb250ZW50QXV0aFoiLCJleHAiOjE3NTk0Mjc5NzYsImRldmljZSI6eyJ3YXRlcm1hcmtpbmciOnRydWUsImFjY291bnRJZCI6Ijc3OTExMSJ9fQ.XSKj5b3dJxskzbzOmPdmbnFsZpWRVKOTWpFKPbdM_6Q";
-        }
-        if (type == shaka.net.NetworkingEngine.RequestType.MANIFEST) {
-          request.headers['User-Agent'] = 'ReactNativeVideo/3.0 (Linux;Android 11) ExoPlayerLib/2.10.4';
-          request.headers['referer'] = 'app.azamtvmax.com';
-          request.headers['origin'] = 'app.azamtvmax.com';
-        }
-      });
-      
-      try {
-        await player.load("https://cdnblncr.azamtvltd.co.tz/live/eds/AzamSport1/DASH/AzamSport1.mpd?cdntoken=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJleHAiOjE3NTczMDM5NzYsInNpcCI6IjE1LjE1OC4xMS40NCJ9.MPfAhezJ_31dA2Ql-Fsd5iwyevr4ACyqMrCOsx0kxnyRasiJPWqbMGVhf4MuLffVEdqFpGXLb_eRQgQa8Fu8Bg&hdnts=exp=1757303976~acl=/*~hmac=53d576cc82ac1b4b2fa880e46611da7230d65914b2ae96f7564e8a34412b141d");
+
+
+    </style>
+  </head>
+  <body bgcolor='black' style='margin:0'>
+    <div data-shaka-player-container style='position:absolute;z-index:-1;top:0;left:0;width:100%;height:100%;object-fit:cover;'>
+     <video autoplay data-shaka-player id='video' style='width:100%;height:100%;'></video>
+    </div>
+    <script>
         
-        console.log('The video has now been loaded!');
-        
-        // Hide loading message
-        document.getElementById('loadingMessage').style.display = 'none';
-        
-        // Setup autoplay
-        setupAutoplay();
-        
-        // Set up quality menu
-        document.getElementById('qualityBtn').addEventListener('click', function() {
-          const menu = document.getElementById('qualityMenu');
-          menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-        });
-        
-        // Add quality selection handlers
-        document.querySelectorAll('#qualityMenu button').forEach(button => {
-          button.addEventListener('click', function() {
-            const quality = parseInt(this.getAttribute('data-quality'));
-            player.configure({
-              abr: {
-                enabled: false // Disable auto quality when manual quality is selected
-              },
-              restrictions: {
-                maxHeight: quality,
-                minHeight: quality
-              }
-            });
-            document.getElementById('qualityMenu').style.display = 'none';
-          });
-        });
-        
-        // Enable auto quality when double clicking
-        video.addEventListener('dblclick', function() {
-          player.configure({
-            abr: {
-              enabled: true
-            },
-            restrictions: {
-              maxHeight: 1080,
-              minHeight: 144
+    var reloadtime = 1000;
+      async function init() {
+        const video = document.getElementById('video');
+        const ui = video.ui;
+        const controls = ui.getControls();
+        const player = controls.getPlayer();
+		
+        player.configure({
+          drm: {
+            servers: {
+              'com.widevine.alpha': 'https://azy4sj9b.anycast.nagra.com/AZY4SJ9B/wvls/contentlicenseservice/v1/licenses'
             }
-          });
+          },
+           abr: {
+      enabled: true,
+      defaultBandwidthEstimate: 100,
+      restrictions: {
+        maxHeight: 240,
+
+        }
+        }
         });
-        
-      } catch (error) {
-        console.error('Error loading video:', error);
-        document.getElementById('loadingMessage').textContent = 'Error loading stream. Retrying...';
-        
+        window.player = player;
+        window.ui = ui;
+        player.addEventListener('error', onPlayerErrorEvent);
+        controls.addEventListener('error', onUIErrorEvent);
+        player.getNetworkingEngine().registerRequestFilter(function(type, request) {
+          if (type == shaka.net.NetworkingEngine.RequestType.LICENSE) {
+          request.headers['User-Agent'] = 'ReactNativeVideo/3.0 (Linux;Android 11) ExoPlayerLib/2.10.4';
+			request.headers['referer'] = 'app.azamtvmax.com';
+			request.headers['origin'] = 'app.azamtvmax.com';
+            request.headers['nv-tenant-id'] = 'AZY4SJ9B';
+            request.headers['nv-authorizations'] = "eyJraWQiOiI3NzUwOTAiLCJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ2ZXIiOiIxLjAiLCJjb250ZW50UmlnaHRzIjpbeyJjb250ZW50SWQiOiJDSC0zOTc0YzJjZC05ZWM0LTRkMDMtODJiMS05Yzk5Mzk3M2U0ODciLCJzdGFydCI6IjIwMjUtMDMtMzFUMDA6MDA6MDBaIiwiZW5kIjoiMjAzMC0wMi0xOVQwMDowMDowMFoiLCJ1c2FnZVJ1bGVzUHJvZmlsZUlkIjoiU0QifV0sInRlbmFudElkIjoiQVpZNFNKOUIiLCJ0eXAiOiJDb250ZW50QXV0aFoiLCJleHAiOjE3NTk0Mjc5NzYsImRldmljZSI6eyJ3YXRlcm1hcmtpbmciOnRydWUsImFjY291bnRJZCI6Ijc3OTExMSJ9fQ.XSKj5b3dJxskzbzOmPdmbnFsZpWRVKOTWpFKPbdM_6Q";
+          }
+		  if (type == shaka.net.NetworkingEngine.RequestType.MANIFEST) {
+		  request.headers['User-Agent'] = 'ReactNativeVideo/3.0 (Linux;Android 11) ExoPlayerLib/2.10.4';
+			request.headers['referer'] = 'app.azamtvmax.com';
+			request.headers['origin'] = 'app.azamtvmax.com';
+          }
+        });
+        try {
+          await player.load("https://intlive.azamtvltd.co.tz:443/live/eds/AzamSport2/DASH/AzamSport2.mpd?hdnts=exp=1757340014-ac1=/%2A-hmac=6f19d1f5cc0b12530a45ba0ede040f154985b7feacc9c50506bb3570F033d");
+          console.log('The video has now been loaded!')
+          
+          document.addEventListener('click', function() {video.play();});
+
+        } catch (error) {
+	  
         setTimeout(function() {
-          location.reload();
-        }, reloadtime);
+		
+		  //reload webpage 
+		  location.reload();
+		}, reloadtime);
+
+          onPlayerError(error)
+        }
       }
-    }
 
-    function onPlayerErrorEvent(errorEvent) {
-      console.error('Player error event:', errorEvent);
-      document.getElementById('loadingMessage').style.display = 'block';
-      document.getElementById('loadingMessage').textContent = 'Stream error. Retrying...';
-      
-      setTimeout(function() {
-        location.reload();
-      }, reloadtime);
-    }
+      function onPlayerErrorEvent(errorEvent) {
+	  
+        setTimeout(function() {
+		  // Code to be executed after 10 seconds
+		  //reload webpage 
+		  location.reload();
+		}, reloadtime);
 
-    function onPlayerError(error) {
-      console.error('Player error:', error);
-      document.getElementById('loadingMessage').style.display = 'block';
-      document.getElementById('loadingMessage').textContent = 'Player error. Retrying...';
-      
-      setTimeout(function() {
-        location.reload();
-      }, reloadtime);
-    }
+        onPlayerError(event.detail)
+      }
 
-    function onUIErrorEvent(errorEvent) {
-      console.error('UI error event:', errorEvent);
-      document.getElementById('loadingMessage').style.display = 'block';
-      document.getElementById('loadingMessage').textContent = 'UI error. Retrying...';
-      
-      setTimeout(function() {
-        location.reload();
-      }, reloadtime);
-    }
+      function onPlayerError(error) {
+	  
+        setTimeout(function() {
+		  // Code to be executed after 10 seconds
+		  //reload webpage 
+		  location.reload();
+		}, reloadtime);
 
-    function initFailed(errorEvent) {
-      console.error('UI load failed:', errorEvent);
-      document.getElementById('loadingMessage').style.display = 'block';
-      document.getElementById('loadingMessage').textContent = 'Player failed to load. Retrying...';
-      
-      setTimeout(function() {
-        location.reload();
-      }, reloadtime);
-    }
-    
-    // Initialize when UI is loaded
-    document.addEventListener('shaka-ui-loaded', init);
-    document.addEventListener('shaka-ui-load-failed', initFailed);
-  </script>
-</body>
+        console.error('Error code', error.code, 'object', error)
+      }
+
+      function onUIErrorEvent(errorEvent) {
+	  
+        setTimeout(function() {
+		  // Code to be executed after 10 seconds
+		  //reload webpage 
+		  location.reload();
+		}, reloadtime);
+
+        onPlayerError(event.detail)
+      }
+
+      function initFailed(errorEvent) {
+	  
+        setTimeout(function() {
+		  // Code to be executed after 10 seconds
+		  //reload webpage 
+		  location.reload();
+		}, reloadtime);
+
+        console.error('Unable to load the UI library!')
+      }
+      document.addEventListener('shaka-ui-loaded', init);
+      document.addEventListener('shaka-ui-load-failed', initFailed)
+
+    </script>
 </html>
