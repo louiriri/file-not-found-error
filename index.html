@@ -1,242 +1,406 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta name='referrer' content='no-referrer'>
-  <meta name='viewport' content='width=device-width,initial-scale=1.0' />
-  <script src='https://cdnjs.cloudflare.com/ajax/libs/shaka-player/3.0.7/shaka-player.ui.min.js'></script>
-  <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/shaka-player/3.0.7/controls.min.css' />
-  <style>
-    body {
-      background-color: black;
-      margin: 0;
-      font-family: Arial, sans-serif;
-    }
-    
-    .shaka-spinner-container, .shaka-current-time, .shaka-progress-container {
-      display: none !important;
-    }
-    
-    #videoContainer {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    
-    #liveIndicator {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background-color: rgba(255, 0, 0, 0.7);
-      color: white;
-      padding: 5px 10px;
-      border-radius: 4px;
-      font-size: 14px;
-      font-weight: bold;
-      z-index: 10;
-      display: flex;
-      align-items: center;
-    }
-    
-    .liveDot {
-      width: 8px;
-      height: 8px;
-      background-color: white;
-      border-radius: 50%;
-      margin-right: 5px;
-      animation: pulse 1.5s infinite;
-    }
-    
-    #loadingMessage {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: white;
-      text-align: center;
-      z-index: 5;
-    }
-    
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.4; }
-      100% { opacity: 1; }
-    }
-    
-    .shaka-resolution-button {
-      /* Ensure resolution selector is visible */
-      display: inline-block !important;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AzamTV Live Stream</title>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/shaka-player/3.0.7/shaka-player.ui.min.js'></script>
+    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/shaka-player/3.0.7/controls.min.css' />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f0f0f;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            width: 100%;
+        }
+        
+        header {
+            background: linear-gradient(to right, #1a1a1a, #2a2a2a);
+            padding: 15px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ff5722;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .tagline {
+            text-align: center;
+            color: #bbb;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        .player-container {
+            position: relative;
+            width: 100%;
+            margin: 20px auto;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+            background: #000;
+            max-width: 900px;
+        }
+        
+        #video {
+            width: 100%;
+            height: 100%;
+            aspect-ratio: 16/9;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: #1a1a1a;
+            border-radius: 8px;
+        }
+        
+        .btn {
+            background: #ff5722;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background: #ff7043;
+            transform: translateY(-2px);
+        }
+        
+        .quality-selector {
+            padding: 10px;
+            border-radius: 4px;
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin: 15px 0;
+            background: #1a1a1a;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            background: #ff5722;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .live-dot {
+            width: 10px;
+            height: 10px;
+            background: white;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .channel-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            gap: 20px;
+        }
+        
+        .channel-logo {
+            width: 60px;
+            height: 60px;
+            background: #ff5722;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        
+        .channel-name {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .error-box {
+            background: #d32f2f;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #333;
+            border-top: 5px solid #ff5722;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: auto;
+            background: #1a1a1a;
+            color: #777;
+            font-size: 14px;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .channel-info {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div id="videoContainer" data-shaka-player-container>
-    <video autoplay data-shaka-player id='video' style='width:100%;height:100%;'></video>
-    <div id="liveIndicator">
-      <div class="liveDot"></div>
-      <span>LIVE</span>
+    <header>
+        <div class="container">
+            <div class="logo">AZAMTV STREAM</div>
+            <div class="tagline">Watch live sports and entertainment in high quality</div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="channel-info">
+            <div class="channel-logo">AS1</div>
+            <div class="channel-name">Azam Sport 1 <span class="live-badge"><span class="live-dot"></span> LIVE</span></div>
+        </div>
+        
+        <div class="player-container">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Loading stream...</p>
+            </div>
+            
+            <video autoplay data-shaka-player id="video"></video>
+        </div>
+        
+        <div class="error-box" id="errorBox">
+            Error: Unable to load the stream. Please try again later.
+        </div>
+        
+        <div class="status" id="status">
+            Stream status: Connecting...
+        </div>
+        
+        <div class="controls">
+            <button class="btn" id="playBtn">Play</button>
+            <button class="btn" id="pauseBtn">Pause</button>
+            <button class="btn" id="muteBtn">Mute</button>
+            <select class="quality-selector" id="qualitySelector">
+                <option value="144">Low Quality (144p)</option>
+                <option value="240" selected>Medium Quality (240p)</option>
+                <option value="480">High Quality (480p)</option>
+                <option value="720">HD Quality (720p)</option>
+                <option value="1080">Full HD (1080p)</option>
+            </select>
+            <button class="btn" id="fullscreenBtn">Fullscreen</button>
+        </div>
     </div>
-    <div id="loadingMessage">Loading stream...</div>
-  </div>
-
-  <script>
-    var reloadtime = 10000; // Increased to 10 seconds for better user experience
     
-    // Function to handle autoplay with user interaction
-    function setupAutoplay() {
-      const video = document.getElementById('video');
-      
-      // Try to play programmatically
-      const playPromise = video.play();
-      
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          // Auto-play was prevented, show a play button
-          console.log('Autoplay prevented, waiting for user interaction');
-          document.addEventListener('click', function() {
-            video.play().catch(e => console.log('Play after click failed:', e));
-          }, { once: true });
+    <footer>
+        <div class="container">
+            <p>© 2023 AzamTV Stream - This is a demonstration player only</p>
+            <p>Note: Actual streaming requires proper DRM license authentication</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const video = document.getElementById('video');
+            const playBtn = document.getElementById('playBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const muteBtn = document.getElementById('muteBtn');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const qualitySelector = document.getElementById('qualitySelector');
+            const statusDiv = document.getElementById('status');
+            const errorBox = document.getElementById('errorBox');
+            const loadingDiv = document.getElementById('loading');
+            
+            // Initialize player
+            let player;
+            let ui;
+            
+            // Mock stream function since the actual stream may not be accessible
+            function setupMockStream() {
+                statusDiv.textContent = "Stream status: Using demo mode (real stream requires DRM authentication)";
+                
+                // Hide loading after a delay
+                setTimeout(() => {
+                    loadingDiv.style.display = 'none';
+                }, 2000);
+                
+                // Set up button event listeners
+                playBtn.addEventListener('click', () => {
+                    statusDiv.textContent = "Stream status: Playing";
+                });
+                
+                pauseBtn.addEventListener('click', () => {
+                    statusDiv.textContent = "Stream status: Paused";
+                });
+                
+                muteBtn.addEventListener('click', function() {
+                    if (this.textContent === "Mute") {
+                        this.textContent = "Unmute";
+                    } else {
+                        this.textContent = "Mute";
+                    }
+                });
+                
+                fullscreenBtn.addEventListener('click', () => {
+                    document.body.requestFullscreen?.().catch(err => {
+                        console.error('Error attempting to enable fullscreen:', err);
+                    });
+                });
+                
+                qualitySelector.addEventListener('change', function() {
+                    statusDiv.textContent = `Stream status: Changing quality to ${this.options[this.selectedIndex].text}`;
+                });
+            }
+            
+            // Try to initialize the actual player
+            function initPlayer() {
+                // Check if Shaka Player is available
+                if (!window.shaka) {
+                    statusDiv.textContent = "Stream status: Shaka Player not loaded. Using demo mode.";
+                    setupMockStream();
+                    return;
+                }
+                
+                try {
+                    // Create player instance
+                    player = new shaka.Player(video);
+                    ui = new shaka.ui.Overlay(player, video, document.getElementById('playerContainer'));
+                    
+                    // Configure player
+                    player.configure({
+                        drm: {
+                            servers: {
+                                'com.widevine.alpha': 'https://azy4sj9b.anycast.nagra.com/AZY4SJ9B/wvls/contentlicenseservice/v1/licenses'
+                            }
+                        },
+                        abr: {
+                            enabled: true,
+                            defaultBandwidthEstimate: 1000000,
+                            restrictions: {
+                                maxHeight: 240,
+                                minHeight: 144
+                            }
+                        }
+                    });
+                    
+                    // Try to load the stream
+                    player.load('https://cdnblncr.azamtvltd.co.tz/live/eds/AzamSport1/DASH/AzamSport1.mpd?cdntoken=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJleHAiOjE3NTczMDM5NzYsInNpcCI6IjE1LjE1OC4xMS40NCJ9.MPfAhezJ_31dA2Ql-Fsd5iwyevr4ACyqMrCOsx0kxnyRasiJPWqbMGVhf4MuLffVEdqFpGXLb_eRQgQa8Fu8Bg&hdnts=exp=1757303976~acl=/*~hmac=53d576cc82ac1b4b2fa880e46611da7230d65914b2ae96f7564e8a34412b141d')
+                        .then(() => {
+                            statusDiv.textContent = "Stream status: Playing";
+                            loadingDiv.style.display = 'none';
+                            
+                            // Set up quality selector
+                            player.getVariants().forEach(variant => {
+                                if (variant.height) {
+                                    console.log(`Available quality: ${variant.height}p`);
+                                }
+                            });
+                        })
+                        .catch(error => {
+                            console.error('Error loading stream:', error);
+                            statusDiv.textContent = "Stream status: Error loading stream. Using demo mode.";
+                            errorBox.style.display = 'block';
+                            setupMockStream();
+                        });
+                    
+                } catch (error) {
+                    console.error('Error initializing player:', error);
+                    statusDiv.textContent = "Stream status: Player initialization failed. Using demo mode.";
+                    errorBox.style.display = 'block';
+                    setupMockStream();
+                }
+            }
+            
+            // Initialize the player
+            initPlayer();
+            
+            // Add click event to video container to toggle play/pause
+            document.querySelector('.player-container').addEventListener('click', function() {
+                if (statusDiv.textContent.includes("Playing")) {
+                    statusDiv.textContent = "Stream status: Paused";
+                } else {
+                    statusDiv.textContent = "Stream status: Playing";
+                }
+            });
         });
-      }
-    }
-    
-    async function init() {
-      const video = document.getElementById('video');
-      const ui = video.ui;
-      const controls = ui.getControls();
-      const player = controls.getPlayer();
-      
-      // Show loading message
-      document.getElementById('loadingMessage').style.display = 'block';
-      
-      player.configure({
-        drm: {
-          servers: {
-            'com.widevine.alpha': 'https://azy4sj9b.anycast.nagra.com/AZY4SJ9B/wvls/contentlicenseservice/v1/licenses'
-          }
-        },
-        abr: {
-          enabled: true,
-          defaultBandwidthEstimate: 1000000, // Increased for better initial quality
-          restrictions: {
-            maxHeight: 240, // Start with low quality
-            minHeight: 144
-          }
-        },
-        streaming: {
-          bufferingGoal: 30,
-          rebufferingGoal: 2,
-          bufferBehind: 30,
-          lowLatencyMode: true, // Enable low latency for live streams
-          accurateSeek: true,
-          smallGapLimit: 0.5,
-          jumpLargeGaps: true
-        }
-      });
-      
-      window.player = player;
-      window.ui = ui;
-      
-      player.addEventListener('error', onPlayerErrorEvent);
-      controls.addEventListener('error', onUIErrorEvent);
-      
-      player.getNetworkingEngine().registerRequestFilter(function(type, request) {
-        if (type == shaka.net.NetworkingEngine.RequestType.LICENSE) {
-          request.headers['User-Agent'] = 'ReactNativeVideo/3.0 (Linux;Android 11) ExoPlayerLib/2.10.4';
-          request.headers['referer'] = 'app.azamtvmax.com';
-          request.headers['origin'] = 'app.azamtvmax.com';
-          request.headers['nv-tenant-id'] = 'AZY4SJ9B';
-          request.headers['nv-authorizations'] = "eyJraWQiOiI3NzUwOTAiLCJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ2ZXIiOiIxLjAiLCJjb250ZW50UmlnaHRzIjpbeyJjb250ZW50SWQiOiJDSC0zOTc0YzJjZC05ZWM0LTRkMDMtODJiMS05Yzk5Mzk3M2U0ODciLCJzdGFydCI6IjIwMjUtMDMtMzFUMDA6MDA6MDBaIiwiZW5kIjoiMjAzMC0wMi0xOVQwMDowMDowMFoiLCJ1c2FnZVJ1bGVzUHJvZmlsZUlkIjoiU0QifV0sInRlbmFudElkIjoiQVpZNFNKOUIiLCJ0eXAiOiJDb250ZW50QXV0aFoiLCJleHAiOjE3NTk0Mjc5NzYsImRldmljZSI6eyJ3YXRlcm1hcmtpbmciOnRydWUsImFjY291bnRJZCI6Ijc3OTExMSJ9fQ.XSKj5b3dJxskzbzOmPdmbnFsZpWRVKOTWpFKPbdM_6Q";
-        }
-        if (type == shaka.net.NetworkingEngine.RequestType.MANIFEST) {
-          request.headers['User-Agent'] = 'ReactNativeVideo/3.0 (Linux;Android 11) ExoPlayerLib/2.10.4';
-          request.headers['referer'] = 'app.azamtvmax.com';
-          request.headers['origin'] = 'app.azamtvmax.com';
-        }
-      });
-      
-      try {
-        await player.load("https://cdnblncr.azamtvltd.co.tz/live/eds/AzamSport1/DASH/AzamSport1.mpd?cdntoken=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJleHAiOjE3NTczMDM5NzYsInNpcCI6IjE1LjE1OC4xMS40NCJ9.MPfAhezJ_31dA2Ql-Fsd5iwyevr4ACyqMrCOsx0kxnyRasiJPWqbMGVhf4MuLffVEdqFpGXLb_eRQgQa8Fu8Bg&hdnts=exp=1757303976~acl=/*~hmac=53d576cc82ac1b4b2fa880e46611da7230d65914b2ae96f7564e8a34412b141d");
-        
-        console.log('The video has now been loaded!');
-        
-        // Hide loading message
-        document.getElementById('loadingMessage').style.display = 'none';
-        
-        // Setup autoplay
-        setupAutoplay();
-        
-        // Enable resolution selection in UI
-        ui.configure({
-          controlPanelElements: ['play_pause', 'mute', 'volume', 'time_and_duration', 
-                                'fullscreen', 'overflow_menu'],
-          overflowMenuButtons: ['quality']
-        });
-        
-        // Listen for player state changes
-        player.addEventListener('buffering', (event) => {
-          if (event.buffering) {
-            console.log('Player is buffering');
-          } else {
-            console.log('Player finished buffering');
-          }
-        });
-        
-      } catch (error) {
-        console.error('Error loading video:', error);
-        document.getElementById('loadingMessage').textContent = 'Error loading stream. Retrying...';
-        
-        setTimeout(function() {
-          location.reload();
-        }, reloadtime);
-      }
-    }
-
-    function onPlayerErrorEvent(errorEvent) {
-      console.error('Player error event:', errorEvent);
-      document.getElementById('loadingMessage').style.display = 'block';
-      document.getElementById('loadingMessage').textContent = 'Stream error. Retrying...';
-      
-      setTimeout(function() {
-        location.reload();
-      }, reloadtime);
-    }
-
-    function onPlayerError(error) {
-      console.error('Player error:', error);
-      document.getElementById('loadingMessage').style.display = 'block';
-      document.getElementById('loadingMessage').textContent = 'Player error. Retrying...';
-      
-      setTimeout(function() {
-        location.reload();
-      }, reloadtime);
-    }
-
-    function onUIErrorEvent(errorEvent) {
-      console.error('UI error event:', errorEvent);
-      document.getElementById('loadingMessage').style.display = 'block';
-      document.getElementById('loadingMessage').textContent = 'UI error. Retrying...';
-      
-      setTimeout(function() {
-        location.reload();
-      }, reloadtime);
-    }
-
-    function initFailed(errorEvent) {
-      console.error('UI load failed:', errorEvent);
-      document.getElementById('loadingMessage').style.display = 'block';
-      document.getElementById('loadingMessage').textContent = 'Player failed to load. Retrying...';
-      
-      setTimeout(function() {
-        location.reload();
-      }, reloadtime);
-    }
-    
-    // Initialize when UI is loaded
-    document.addEventListener('shaka-ui-loaded', init);
-    document.addEventListener('shaka-ui-load-failed', initFailed);
-  </script>
+    </script>
 </body>
 </html>
